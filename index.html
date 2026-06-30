@@ -1,63 +1,64 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buen Voltaje Rutas</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #111;
       color: white;
-      padding: 20px;
     }
 
-    .app {
-      max-width: 430px;
-      margin: auto;
+    header {
+      padding: 14px;
+      background: #111;
+      border-bottom: 1px solid #333;
     }
 
     h1 {
+      margin: 0;
       color: #ffd400;
-      font-size: 30px;
+      font-size: 22px;
     }
 
-    .card {
+    .panel {
+      padding: 12px;
       background: #1c1c1c;
-      border: 1px solid #333;
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 16px;
     }
 
     label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #ccc;
     }
 
     input {
       width: 100%;
-      font-size: 24px;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 12px;
+      font-size: 20px;
+      border-radius: 10px;
       border: none;
       box-sizing: border-box;
       text-align: center;
+      margin-bottom: 10px;
     }
 
     button {
       width: 100%;
-      padding: 17px;
+      padding: 14px;
       border: none;
-      border-radius: 14px;
+      border-radius: 12px;
       background: #ffd400;
       color: #111;
-      font-size: 17px;
       font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
+      font-size: 16px;
+      margin-top: 8px;
     }
 
     .secondary {
@@ -65,71 +66,54 @@
       color: white;
     }
 
+    #map {
+      height: 58vh;
+      width: 100%;
+    }
+
     .status {
+      font-size: 13px;
       color: #bbb;
-      font-size: 14px;
-      margin-top: 12px;
-      line-height: 1.4;
+      margin-top: 8px;
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
+  <header>
     <h1>⚡ Buen Voltaje Rutas</h1>
+  </header>
 
-    <div class="card">
-      <h2>🚗 Dejar flyers</h2>
-      <p>Buscamos ferreterías cercanas desde tu ubicación actual.</p>
+  <div class="panel">
+    <label>¿Cuántas ferreterías querés visitar?</label>
+    <input id="cantidad" type="number" min="1" max="20" value="5">
 
-      <label>¿Cuántas ferreterías querés visitar?</label>
-      <input id="cantidad" type="number" min="1" max="20" value="5">
+    <button onclick="ubicarme()">📍 Usar mi ubicación</button>
+    <button onclick="buscarFerreterias()">🔩 Buscar ferreterías cercanas</button>
+    <button class="secondary" onclick="abrirGoogleMaps()">🗺️ Abrir zona en Google Maps</button>
 
-      <button onclick="buscarFerreterias()">
-        📍 Buscar ferreterías cercanas
-      </button>
-
-      <button class="secondary" onclick="abrirBusqueda('ferreterías cerca de')">
-        🗺️ Abrir en Google Maps
-      </button>
-
-      <p id="estado" class="status">
-        Primero tocá “Buscar ferreterías cercanas”.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>🛒 Buscar materiales cerca</h2>
-      <p>Encontrá proveedores según dónde estés.</p>
-
-      <button onclick="abrirBusqueda('ferreterías cerca de')">
-        🔩 Ferreterías
-      </button>
-
-      <button onclick="abrirBusqueda('casas de electricidad cerca de')">
-        ⚡ Casas de electricidad
-      </button>
-
-      <button onclick="abrirBusqueda('refrigeración aire acondicionado cerca de')">
-        ❄️ Refrigeración / Aire acondicionado
-      </button>
-
-      <button onclick="abrirBusqueda('corralones cerca de')">
-        🧱 Corralones
-      </button>
-    </div>
+    <div id="estado" class="status">Primero tocá “Usar mi ubicación”.</div>
   </div>
 
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
   <script>
+    let map;
     let ubicacion = null;
+    let marcadorUsuario = null;
+    let marcadores = [];
 
-    function obtenerUbicacion(callback) {
+    map = L.map('map').setView([-34.60, -58.45], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'OpenStreetMap'
+    }).addTo(map);
+
+    function ubicarme() {
       const estado = document.getElementById("estado");
-
-      if (!navigator.geolocation) {
-        estado.innerText = "Tu navegador no permite usar ubicación.";
-        return;
-      }
+      estado.innerText = "Detectando ubicación...";
 
       navigator.geolocation.getCurrentPosition(
         function(pos) {
@@ -137,36 +121,116 @@
             lat: pos.coords.latitude,
             lng: pos.coords.longitude
           };
-          callback();
+
+          map.setView([ubicacion.lat, ubicacion.lng], 15);
+
+          if (marcadorUsuario) {
+            map.removeLayer(marcadorUsuario);
+          }
+
+          marcadorUsuario = L.marker([ubicacion.lat, ubicacion.lng])
+            .addTo(map)
+            .bindPopup("📍 Estás acá")
+            .openPopup();
+
+          estado.innerText = "Ubicación detectada. Ahora podés buscar ferreterías cercanas.";
         },
         function() {
-          estado.innerText = "No pude obtener tu ubicación. Revisá los permisos del navegador.";
+          estado.innerText = "No pude obtener tu ubicación. Revisá permisos de ubicación en Safari.";
         }
       );
     }
 
-    function buscarFerreterias() {
+    async function buscarFerreterias() {
       const estado = document.getElementById("estado");
-      const cantidad = document.getElementById("cantidad").value;
+      const cantidad = parseInt(document.getElementById("cantidad").value);
 
-      estado.innerText = "Detectando tu ubicación...";
+      if (!ubicacion) {
+        estado.innerText = "Primero tocá “Usar mi ubicación”.";
+        return;
+      }
 
-      obtenerUbicacion(function() {
-        estado.innerText =
-          "Ubicación detectada. Buscaremos hasta " +
-          cantidad +
-          " ferreterías cercanas.";
-      });
+      estado.innerText = "Buscando ferreterías cercanas...";
+
+      marcadores.forEach(m => map.removeLayer(m));
+      marcadores = [];
+
+      const radio = 3000;
+
+      const query = `
+        [out:json];
+        (
+          node["shop"="hardware"](around:${radio},${ubicacion.lat},${ubicacion.lng});
+          way["shop"="hardware"](around:${radio},${ubicacion.lat},${ubicacion.lng});
+          relation["shop"="hardware"](around:${radio},${ubicacion.lat},${ubicacion.lng});
+        );
+        out center;
+      `;
+
+      const url = "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query);
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const lugares = data.elements
+          .map(el => {
+            const lat = el.lat || el.center?.lat;
+            const lng = el.lon || el.center?.lon;
+            const nombre = el.tags?.name || "Ferretería sin nombre";
+
+            if (!lat || !lng) return null;
+
+            return {
+              nombre,
+              lat,
+              lng,
+              distancia: calcularDistancia(ubicacion.lat, ubicacion.lng, lat, lng)
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.distancia - b.distancia)
+          .slice(0, cantidad);
+
+        lugares.forEach((lugar, index) => {
+          const marker = L.marker([lugar.lat, lugar.lng])
+            .addTo(map)
+            .bindPopup(`${index + 1}. ${lugar.nombre}<br>${lugar.distancia.toFixed(2)} km`);
+
+          marcadores.push(marker);
+        });
+
+        estado.innerText = `Encontré ${lugares.length} ferreterías cercanas. Próximo paso: armar recorrido en auto.`;
+
+      } catch (error) {
+        estado.innerText = "No pude buscar ferreterías. Probá de nuevo o abrí Google Maps.";
+      }
     }
 
-    function abrirBusqueda(tipo) {
-      const estado = document.getElementById("estado");
+    function calcularDistancia(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
 
-      obtenerUbicacion(function() {
-        const texto = tipo + " " + ubicacion.lat + "," + ubicacion.lng;
-        const url = "https://www.google.com/maps/search/" + encodeURIComponent(texto);
-        window.open(url, "_blank");
-      });
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function abrirGoogleMaps() {
+      if (!ubicacion) {
+        alert("Primero tocá Usar mi ubicación.");
+        return;
+      }
+
+      const url = `https://www.google.com/maps/search/ferreterías/@${ubicacion.lat},${ubicacion.lng},15z`;
+      window.location.href = url;
     }
   </script>
 </body>
