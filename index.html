@@ -6,83 +6,167 @@
   <title>Buen Voltaje Rutas</title>
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
       background: #111;
-      color: #fff;
-      margin: 0;
+      color: white;
       padding: 20px;
     }
 
     .app {
-      max-width: 420px;
+      max-width: 430px;
       margin: auto;
     }
 
     h1 {
       color: #ffd400;
-      font-size: 28px;
+      font-size: 30px;
+    }
+
+    .card {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #ccc;
+    }
+
+    input {
+      width: 100%;
+      font-size: 24px;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      box-sizing: border-box;
+      text-align: center;
     }
 
     button {
       width: 100%;
-      padding: 18px;
-      margin: 10px 0;
-      font-size: 18px;
+      padding: 17px;
       border: none;
-      border-radius: 12px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .primary {
+      border-radius: 14px;
       background: #ffd400;
       color: #111;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
     }
 
     .secondary {
       background: #333;
-      color: #fff;
+      color: white;
     }
 
-    .note {
+    .status {
       color: #bbb;
       font-size: 14px;
-      margin-top: 20px;
+      margin-top: 12px;
+      line-height: 1.4;
     }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <h1>Buen Voltaje Rutas</h1>
+    <h1>⚡ Buen Voltaje Rutas</h1>
 
-    <p>Elegí qué querés buscar cerca de tu ubicación actual:</p>
+    <div class="card">
+      <h2>🚗 Dejar flyers</h2>
+      <p>Buscamos ferreterías cercanas desde tu ubicación actual.</p>
 
-    <button class="primary" onclick="buscar('ferreterías cerca de mí')">
-      🔩 Ferreterías cercanas
-    </button>
+      <label>¿Cuántas ferreterías querés visitar?</label>
+      <input id="cantidad" type="number" min="1" max="20" value="5">
 
-    <button class="secondary" onclick="buscar('casas de electricidad cerca de mí')">
-      ⚡ Casas de electricidad
-    </button>
+      <button onclick="buscarFerreterias()">
+        📍 Buscar ferreterías cercanas
+      </button>
 
-    <button class="secondary" onclick="buscar('refrigeración aire acondicionado cerca de mí')">
-      ❄️ Refrigeración / Aire acondicionado
-    </button>
+      <button class="secondary" onclick="abrirBusqueda('ferreterías cerca de')">
+        🗺️ Abrir en Google Maps
+      </button>
 
-    <button class="secondary" onclick="buscar('corralones cerca de mí')">
-      🧱 Corralones
-    </button>
+      <p id="estado" class="status">
+        Primero tocá “Buscar ferreterías cercanas”.
+      </p>
+    </div>
 
-    <p class="note">
-      Esta primera versión abre Google Maps con comercios cercanos. Después vamos a agregar selección de paradas y optimización del recorrido en auto.
-    </p>
+    <div class="card">
+      <h2>🛒 Buscar materiales cerca</h2>
+      <p>Encontrá proveedores según dónde estés.</p>
+
+      <button onclick="abrirBusqueda('ferreterías cerca de')">
+        🔩 Ferreterías
+      </button>
+
+      <button onclick="abrirBusqueda('casas de electricidad cerca de')">
+        ⚡ Casas de electricidad
+      </button>
+
+      <button onclick="abrirBusqueda('refrigeración aire acondicionado cerca de')">
+        ❄️ Refrigeración / Aire acondicionado
+      </button>
+
+      <button onclick="abrirBusqueda('corralones cerca de')">
+        🧱 Corralones
+      </button>
+    </div>
   </div>
 
   <script>
-    function buscar(texto) {
-      const url = "https://www.google.com/maps/search/" + encodeURIComponent(texto);
-      window.open(url, "_blank");
+    let ubicacion = null;
+
+    function obtenerUbicacion(callback) {
+      const estado = document.getElementById("estado");
+
+      if (!navigator.geolocation) {
+        estado.innerText = "Tu navegador no permite usar ubicación.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          ubicacion = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          };
+          callback();
+        },
+        function() {
+          estado.innerText = "No pude obtener tu ubicación. Revisá los permisos del navegador.";
+        }
+      );
+    }
+
+    function buscarFerreterias() {
+      const estado = document.getElementById("estado");
+      const cantidad = document.getElementById("cantidad").value;
+
+      estado.innerText = "Detectando tu ubicación...";
+
+      obtenerUbicacion(function() {
+        estado.innerText =
+          "Ubicación detectada. Buscaremos hasta " +
+          cantidad +
+          " ferreterías cercanas.";
+      });
+    }
+
+    function abrirBusqueda(tipo) {
+      const estado = document.getElementById("estado");
+
+      obtenerUbicacion(function() {
+        const texto = tipo + " " + ubicacion.lat + "," + ubicacion.lng;
+        const url = "https://www.google.com/maps/search/" + encodeURIComponent(texto);
+        window.open(url, "_blank");
+      });
     }
   </script>
 </body>
