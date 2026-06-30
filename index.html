@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buen Voltaje Rutas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 420px;
+      margin: auto;
+    }
+
+    h1 {
+      color: #ffd400;
+      font-size: 28px;
+    }
+
+    button {
+      width: 100%;
+      padding: 18px;
+      margin: 10px 0;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #ffd400;
+      color: #111;
+    }
+
+    .secondary {
+      background: #333;
+      color: #fff;
+    }
+
+    .note {
+      color: #bbb;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Buen Voltaje Rutas</h1>
+
+    <p>Elegí qué querés buscar cerca de tu ubicación actual:</p>
+
+    <button class="primary" onclick="buscar('ferreterías cerca de mí')">
+      🔩 Ferreterías cercanas
+    </button>
+
+    <button class="secondary" onclick="buscar('casas de electricidad cerca de mí')">
+      ⚡ Casas de electricidad
+    </button>
+
+    <button class="secondary" onclick="buscar('refrigeración aire acondicionado cerca de mí')">
+      ❄️ Refrigeración / Aire acondicionado
+    </button>
+
+    <button class="secondary" onclick="buscar('corralones cerca de mí')">
+      🧱 Corralones
+    </button>
+
+    <p class="note">
+      Esta primera versión abre Google Maps con comercios cercanos. Después vamos a agregar selección de paradas y optimización del recorrido en auto.
+    </p>
+  </div>
+
+  <script>
+    function buscar(texto) {
+      const url = "https://www.google.com/maps/search/" + encodeURIComponent(texto);
+      window.open(url, "_blank");
+    }
+  </script>
+</body>
+</html>
